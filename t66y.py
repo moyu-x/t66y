@@ -1,6 +1,9 @@
+import re
+
 import mongoengine
-import requests
 import redis
+import requests
+from apscheduler.schedulers.blocking import BlockingScheduler
 from bs4 import BeautifulSoup
 
 # 连接redis
@@ -9,6 +12,8 @@ redis_conn = redis.Redis(connection_pool=redis_pool)
 
 # 连接mongodb
 mongoengine.connect('t66y', alias='t66y')
+
+T66Y_INDEX = 'http://t66y.com/index.php'
 
 T66Y_SCHEAME = 'http://t66y.com/'
 
@@ -25,6 +30,7 @@ class Articles(mongoengine.Document):
 
 
 def get_article_data(article: Articles):
+    """获取文章的正文信息然后进行存储"""
     request_url = T66Y_SCHEAME + article.url
     t66y_data = requests.get(request_url)
     t66y_data.encoding = 'gbk'
@@ -36,17 +42,15 @@ def get_article_data(article: Articles):
         article.save()
 
 
-def detail_t66y_page(page_url):
-    article_list = requests.get(page_url)
-    # 设置原来网页的编码
-    article_list.encoding = 'gbk'
-    soup = BeautifulSoup(
-        article_list.text, 'html.parser', from_encoding='utf-8')
+def detail_t66y_page(page_data):
+    """获取每个页面中的所有链接"""
+    soup = BeautifulSoup(page_data, 'html.parser')
     links = soup.find_all('tr', class_='tr3 t_one tac')
     [get_t66y_list_data(item) for item in links]
 
 
 def get_t66y_list_data(item):
+    """对每个页面中链接和信息进行提取"""
     # 抓取链接和标题
     td_item = item.find('td', class_='tal')
     if td_item is None:
@@ -67,11 +71,37 @@ def get_t66y_list_data(item):
         get_article_data(article)
 
 
-def get_t66y_pages():
-    base_url = 'http://t66y.com/thread0806.php?fid=7&search=&page='
-    # 超过一百页之后需要登录，所以这里都不超过一百页
-    [detail_t66y_page(base_url + str(item)) for item in range(1, 101)]
+def get_t66y_pages(url):
+    """对每个链接进行请求，当出现登录的时候就不再访问下一页退出"""
+    page = 1
+    while True:
+        t66y_url = T66Y_SCHEAME + url + '&search=&page=' + str(page)
+        data = requests.get(t66y_url)
+        data.encoding = 'gbk'
+        if re.findall('您沒有登錄或者您沒有權限訪問此頁面', data.text):
+            detail_t66y_page(data.text)
+            page += 1
+        else:
+            break
+
+
+def get_index_pages():
+    """获取主页中栏目的链接"""
+    data = requests.get(T66Y_INDEX)
+    data.encoding = 'gbk'
+
+    soup = BeautifulSoup(data.text, 'html.parser')
+
+    links = soup.find_all('tr', class_='tr3 f_one')
+
+    for item in links:
+        index_url = item.th.h2.a['href']
+        if index_url:
+            get_t66y_pages(index_url)
 
 
 if __name__ == '__main__':
-    get_t66y_pages()
+    sched = BlockingScheduler()
+    for hour in [0, 6, 12, 18]:
+        sched.add_job(get_index_pages, 'cron', hour=hour)
+    sched.start()
