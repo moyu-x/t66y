@@ -79,10 +79,10 @@ def get_t66y_pages(url):
         data = requests.get(t66y_url)
         data.encoding = 'gbk'
         if re.findall('您沒有登錄或者您沒有權限訪問此頁面', data.text):
+            break
+        else:
             detail_t66y_page(data.text)
             page += 1
-        else:
-            break
 
 
 def get_index_pages():
@@ -105,3 +105,4 @@ if __name__ == '__main__':
     for hour in [0, 6, 12, 18]:
         sched.add_job(get_index_pages, 'cron', hour=hour)
     sched.start()
+    # get_index_pages()
