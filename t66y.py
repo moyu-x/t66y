@@ -58,17 +58,20 @@ def get_t66y_list_data(item):
     url = td_item.h3.a['href']
     if url and redis_conn.sismember('t66y', url) is False:
         redis_conn.sadd('t66y', url)
-        title = td_item.h3.a.get_text()
-        author = item.find('a', class_='bl').get_text()
-        if item.find('span', class_='s3'):
-            post_date = item.find('span', class_='s3')['title']
-            post_date = post_date.split(' - ')[1]
-        else:
-            post_date = item.find('div', class_='f12').get_text()
-        article = Articles(
-            url=url, title=title, author=author, post_date=post_date)
-
-        get_article_data(article)
+        try:
+            title = td_item.h3.a.get_text()
+            author = item.find('a', class_='bl').get_text()
+            if item.find('span', class_='s3'):
+                post_date = item.find('span', class_='s3')['title']
+                post_date = post_date.split(' - ')[1]
+            else:
+                post_date = item.find('div', class_='f12').get_text()
+                article = Articles(
+                    url=url, title=title, author=author, post_date=post_date)
+                get_article_data(article)
+        except Exception as e:
+            redis_conn.sadd('t66y_bad', url)
+            print(e)
 
 
 def get_t66y_pages(url):
