@@ -1,32 +1,18 @@
 import re
 
-import mongoengine
 import redis
 import requests
 from apscheduler.schedulers.blocking import BlockingScheduler
 from bs4 import BeautifulSoup
+from articles import Articles
 
 # 连接redis
 redis_pool = redis.ConnectionPool(decode_responses=True)
 redis_conn = redis.Redis(connection_pool=redis_pool)
 
-# 连接mongodb
-mongoengine.connect('t66y', alias='t66y')
-
 T66Y_INDEX = 'http://t66y.com/index.php'
 
 T66Y_SCHEAME = 'http://t66y.com/'
-
-
-class Articles(mongoengine.Document):
-    url = mongoengine.StringField()
-    title = mongoengine.StringField()
-    author = mongoengine.StringField()
-    content = mongoengine.StringField()
-    post_date = mongoengine.StringField()
-    content_no_tag = mongoengine.StringField()
-
-    meta = {'db_alias': 't66y', 'indexes': ['url']}
 
 
 def get_article_data(article: Articles):
@@ -105,7 +91,6 @@ def get_index_pages():
 
 if __name__ == '__main__':
     sched = BlockingScheduler()
-    for hour in [0, 6, 12, 18]:
-        sched.add_job(get_index_pages, 'cron', hour=hour)
+    sched.add_job(get_index_pages, 'cron', hour=3)
     sched.start()
     # get_index_pages()

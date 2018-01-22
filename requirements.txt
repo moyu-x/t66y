@@ -2,5 +2,5 @@ mongoengine >= 0.11.0
 requests >= 2.18.4
 beautifulsoup4 >= 4.6.0
 python-dateutil >= 2.6.0
-reids >= 2.10.6
+redis >= 2.10.6
 apscheduler >= 3.3.1
