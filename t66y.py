@@ -11,7 +11,6 @@ redis_pool = redis.ConnectionPool(decode_responses=True)
 redis_conn = redis.Redis(connection_pool=redis_pool)
 
 T66Y_INDEX = 'http://t66y.com/index.php'
-
 T66Y_SCHEAME = 'http://t66y.com/'
 
 

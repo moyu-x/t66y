@@ -11,5 +11,7 @@ class Articles(mongoengine.Document):
     post_date = mongoengine.StringField()
     content = mongoengine.StringField()
     content_no_tag = mongoengine.StringField()
+    is_jieba = mongoengine.BooleanField(default=False)
+    top_key = mongoengine.ListField(default=[])
 
     meta = {'db_alias': 't66y', 'indexes': ['url']}
