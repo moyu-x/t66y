@@ -52,7 +52,9 @@ def get_t66y_list_data(item):
                 post_date = item.find('span', class_='s3').get_text()
             else:
                 post_date = item.find('div', class_='f12').get_text()
-            post_date = detail_post_date(post_date)
+            # 当没时间抓到时间的时候默认今天
+            post_date = (detail_post_date(post_date)
+                         if post_date else str(datetime.date.today()))
             article = Articles(
                 url=url, title=title, author=author, post_date=post_date)
             get_article_data(article)
