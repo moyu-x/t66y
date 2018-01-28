@@ -20,6 +20,7 @@ class Participle(object):
                 executor.submit(self.analyse_article, item)
 
     def analyse_article(self, article: Articles):
+        """使用结巴抽取每篇文章排名前10的关键词"""
         tags = jieba.analyse.extract_tags(
             article.content_no_tag, topK=10, withWeight=True)
         [self.add_redis(tag) for tag, value in tags]
@@ -28,6 +29,7 @@ class Participle(object):
         article.save()
 
     def add_redis(self, tag):
+        """将分词数据放到redis中，统计词频"""
         redis_conn.zincrby('word_cloud', str(tag), amount=1)
 
 

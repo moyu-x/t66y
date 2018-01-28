@@ -1,9 +1,11 @@
+import datetime
 import re
 
 import redis
-import requests
 from apscheduler.schedulers.blocking import BlockingScheduler
 from bs4 import BeautifulSoup
+
+import requests
 from articles import Articles
 
 # 连接redis
@@ -47,16 +49,25 @@ def get_t66y_list_data(item):
             title = td_item.h3.a.get_text()
             author = item.find('a', class_='bl').get_text()
             if item.find('span', class_='s3'):
-                post_date = item.find('span', class_='s3')['title']
-                post_date = post_date.split(' - ')[1]
+                post_date = item.find('span', class_='s3').get_text()
             else:
                 post_date = item.find('div', class_='f12').get_text()
-                article = Articles(
-                    url=url, title=title, author=author, post_date=post_date)
-                get_article_data(article)
+            post_date = detail_post_date(post_date)
+            article = Articles(
+                url=url, title=title, author=author, post_date=post_date)
+            get_article_data(article)
         except Exception as e:
             redis_conn.sadd('t66y_bad', url)
             print(e)
+
+
+def detail_post_date(post_date):
+    """对时间进行判断和处理"""
+    if '今天' in post_date:
+        post_date = str(datetime.date.today())
+    elif '昨天' in post_date:
+        post_date = str(
+            (datetime.datetime.today() - datetime.timedelta(days=1)).date())
 
 
 def get_t66y_pages(url):
