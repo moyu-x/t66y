@@ -1,6 +1,7 @@
 import datetime
 import re
 
+import dateutil
 import redis
 from apscheduler.schedulers.blocking import BlockingScheduler
 from bs4 import BeautifulSoup
@@ -52,9 +53,8 @@ def get_t66y_list_data(item):
                 post_date = item.find('span', class_='s3').get_text()
             else:
                 post_date = item.find('div', class_='f12').get_text()
-            # 当没时间抓到时间的时候默认今天
-            post_date = (detail_post_date(post_date)
-                         if post_date else str(datetime.date.today()))
+            # 对时间都保存成字符串
+            post_date = str(detail_post_date(post_date).date())
             article = Articles(
                 url=url, title=title, author=author, post_date=post_date)
             get_article_data(article)
@@ -66,10 +66,16 @@ def get_t66y_list_data(item):
 def detail_post_date(post_date):
     """对时间进行判断和处理"""
     if '今天' in post_date:
-        post_date = str(datetime.date.today())
+        post_date = datetime.datetime.now()
     elif '昨天' in post_date:
-        post_date = str(
-            (datetime.datetime.today() - datetime.timedelta(days=1)).date())
+        post_date = datetime.datetime.now() - datetime.timedelta(days=1)
+    else:
+        try:
+            post_date = dateutil.parser.parse(post_date)
+        except Exception as e:
+            post_date = datetime.datetime.now()
+            return post_date
+    return post_date
 
 
 def get_t66y_pages(url):
@@ -105,4 +111,4 @@ if __name__ == '__main__':
     sched = BlockingScheduler()
     sched.add_job(get_index_pages, 'cron', hour=3)
     sched.start()
-    # get_index_pages()
+    #  get_index_pages()
