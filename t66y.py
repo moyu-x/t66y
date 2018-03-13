@@ -131,5 +131,5 @@ if __name__ == '__main__':
     sched = BlockingScheduler()
     sched.add_job(t66y_job, 'cron', hour=3)
     sched.start()
-    # t66y = T66y()
-    # t66y.start_scrap()
+    #  t66y = T66y()
+    #  t66y.start_scrap()
